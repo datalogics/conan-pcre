@@ -6,72 +6,43 @@ from conans import ConanFile, CMake, tools
 import os
 
 
-class LibnameConan(ConanFile):
-    name = "libname"
-    version = "0.0.0"
-    url = "https://github.com/bincrafters/conan-libname"
-    description = "Keep it short"
-
-    # Indicates License type of the packaged library
-    license = "MIT"
-
-    # Packages the license for the conanfile.py
+class PCREConan(ConanFile):
+    name = "pcre"
+    version = "8.41"
+    url = "https://github.com/bincrafters/conan-pcre"
+    homepage = "https://www.pcre.org/"
+    author = "Bincrafters <bincrafters@gmail.com>"
+    description = "Perl Compatible Regular Expressions"
+    license = "BSD"
     exports = ["LICENSE.md"]
-
-    # Remove following lines if the target lib does not use cmake.
     exports_sources = ["CMakeLists.txt"]
     generators = "cmake"
-
-    # Options may need to change depending on the packaged library.
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = "shared=False", "fPIC=True"
-
-    # Custom attributes for Bincrafters recipe conventions
+    options = {"shared": [True, False], "with_bzip2": [True, False]}
+    default_options = ("shared=False", "with_bzip2=True")
     source_subfolder = "source_subfolder"
     build_subfolder = "build_subfolder"
-
-    # Use version ranges for dependencies unless there's a reason not to
-    # Update 2/9/18 - Per conan team, ranges are slow to resolve.
-    # So, with libs like zlib, updates are very rare, so we now use static version
-
-    requires = (
-        "OpenSSL/[>=1.0.2l]@conan/stable",
-        "zlib/1.2.11@conan/stable"
-    )
-
-    def configure(self):
-        if self.settings.os == 'Windows':
-            del self.options.fPIC
+    requires = "zlib/1.2.11@conan/stable"
 
     def source(self):
-        source_url = "https://github.com/libauthor/libname"
-        tools.get("{0}/archive/v{1}.tar.gz".format(source_url, self.version))
+        source_url = "https://ftp.pcre.org"
+        tools.get("{0}/pub/pcre/pcre-{1}.tar.gz".format(source_url, self.version))
         extracted_dir = self.name + "-" + self.version
-
-        #Rename to "source_subfolder" is a convention to simplify later steps
         os.rename(extracted_dir, self.source_subfolder)
+
+    def requirements(self):
+        if self.options.with_bzip2:
+            self.requires.add("bzip2/1.0.6@conan/stable")
 
     def build(self):
         cmake = CMake(self)
-        cmake.definitions["BUILD_TESTS"] = False # example
-        if self.settings.os != 'Windows':
-            cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
+        cmake.definitions["PCRE_BUILD_TESTS"] = False
         cmake.configure(build_folder=self.build_subfolder)
         cmake.build()
         cmake.install()
 
     def package(self):
-        # If the CMakeLists.txt has a proper install method, the steps below may be redundant
-        # If so, you can replace all the steps below with the word "pass"
-        include_folder = os.path.join(self.source_subfolder, "include")
-        self.copy(pattern="LICENSE", dst="license", src=self.source_subfolder)
-        self.copy(pattern="*", dst="include", src=include_folder)
-        self.copy(pattern="*.dll", dst="bin", keep_path=False)
-        self.copy(pattern="*.lib", dst="lib", keep_path=False)
-        self.copy(pattern="*.a", dst="lib", keep_path=False)
-        self.copy(pattern="*.so*", dst="lib", keep_path=False)
-        self.copy(pattern="*.dylib", dst="lib", keep_path=False)
+        self.copy(pattern="LICENCE", dst="licenses", src=self.source_subfolder)
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
