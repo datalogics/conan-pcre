@@ -37,6 +37,8 @@ class PCREConan(ConanFile):
     def build(self):
         cmake = CMake(self)
         cmake.definitions["PCRE_BUILD_TESTS"] = False
+        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+            cmake.definitions["CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS"] = self.options.shared
         cmake.configure(build_folder=self.build_subfolder)
         cmake.build()
         cmake.install()

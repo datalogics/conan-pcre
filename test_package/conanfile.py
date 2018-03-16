@@ -20,7 +20,7 @@ class TestPackageConan(ConanFile):
             bin_path = os.path.join("bin", "test_package")
             arguments = "\\\\d+ 2018"
             if self.settings.os == "Windows":
-                self.run(bin_path)
+                self.run("%s %s" % (bin_path, arguments))
             elif self.settings.os == "Macos":
                 self.run("DYLD_LIBRARY_PATH=%s %s %s" % (os.environ.get('DYLD_LIBRARY_PATH', ''), bin_path, arguments))
             else:
