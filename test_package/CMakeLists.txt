@@ -10,3 +10,6 @@ file(GLOB SOURCE_FILES *.c)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
+if (PCRE_STATIC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE PCRE_STATIC=1)
+endif (PCRE_STATIC)

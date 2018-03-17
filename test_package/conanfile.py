@@ -12,13 +12,17 @@ class TestPackageConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
+        if self.settings.os == "Windows" and \
+           self.settings.compiler == "Visual Studio" and \
+           not self.options['pcre'].shared:
+            cmake.definitions['PCRE_STATIC'] = True
         cmake.configure()
         cmake.build()
 
     def test(self):
         with tools.environment_append(RunEnvironment(self).vars):
             bin_path = os.path.join("bin", "test_package")
-            arguments = "\\\\d+ 2018"
+            arguments = "%sw+ Bincrafters" % "\\" if self.settings.os == "Windows" else "\\\\"
             if self.settings.os == "Windows":
                 self.run("%s %s" % (bin_path, arguments))
             elif self.settings.os == "Macos":
