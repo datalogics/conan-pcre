@@ -12,9 +12,7 @@ class TestPackageConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        if self.settings.os == "Windows" and \
-           self.settings.compiler == "Visual Studio" and \
-           not self.options['pcre'].shared:
+        if self.settings.os == "Windows" and not self.options['pcre'].shared:
             cmake.definitions['PCRE_STATIC'] = True
         cmake.configure()
         cmake.build()
