@@ -34,16 +34,22 @@ class PCREConan(ConanFile):
         if self.options.with_bzip2:
             self.requires.add("bzip2/1.0.6@conan/stable")
 
-    def build(self):
+    def configure_cmake(self):
         cmake = CMake(self)
         cmake.definitions["PCRE_BUILD_TESTS"] = False
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
             cmake.definitions["PCRE_STATIC_RUNTIME"] = not self.options.shared and "MT" in self.settings.compiler.runtime
         cmake.configure(build_folder=self.build_subfolder)
+        return cmake
+
+    def build(self):
+        cmake = self.configure_cmake()
         cmake.build()
-        cmake.install()
 
     def package(self):
+        cmake = self.configure_cmake()
+        cmake.install()
+        cmake.patch_config_paths()
         self.copy(pattern="LICENCE", dst="licenses", src=self.source_subfolder)
 
     def package_info(self):
