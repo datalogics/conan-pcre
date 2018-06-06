@@ -10,7 +10,7 @@ class PCREConan(ConanFile):
     name = "pcre"
     version = "8.41"
     url = "https://github.com/bincrafters/conan-pcre"
-    homepage = "https://www.pcre.org/"
+    homepage = "https://www.pcre.org"
     author = "Bincrafters <bincrafters@gmail.com>"
     description = "Perl Compatible Regular Expressions"
     license = "BSD"
@@ -18,25 +18,56 @@ class PCREConan(ConanFile):
     exports_sources = ["CMakeLists.txt"]
     generators = "cmake"
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], "with_bzip2": [True, False]}
-    default_options = ("shared=False", "with_bzip2=True")
+    options = {
+        "shared": [True, False],
+        "fPIC": [True, False],
+        "with_bzip2": [True, False],
+        "with_zlib": [True, False],
+        "build_pcrecpp": [True, False],
+        "build_pcregrep": [True, False]
+    }
+    default_options = ("shared=False", "fPIC=True", "with_bzip2=True",
+                       "with_zlib=True", "build_pcrecpp=False",
+                       "build_pcregrep=False")
     source_subfolder = "source_subfolder"
     build_subfolder = "build_subfolder"
-    requires = "zlib/1.2.11@conan/stable"
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            self.options.remove("fPIC")
+
+    def configure(self):
+        if not self.options.build_pcrecpp:
+            del self.settings.compiler.libcxx
+
+    def patch_cmake(self):
+        """Patch CMake file to avoid man and share during install stage
+        """
+        cmake_file = os.path.join(self.source_subfolder, "CMakeLists.txt")
+        tools.replace_in_file(cmake_file, "INSTALL(FILES ${man1} DESTINATION man/man1)", "")
+        tools.replace_in_file(cmake_file, "INSTALL(FILES ${man3} DESTINATION man/man3)", "")
+        tools.replace_in_file(cmake_file, "INSTALL(FILES ${html} DESTINATION share/doc/pcre/html)", "")
 
     def source(self):
         source_url = "https://ftp.pcre.org"
         tools.get("{0}/pub/pcre/pcre-{1}.tar.gz".format(source_url, self.version))
         extracted_dir = self.name + "-" + self.version
         os.rename(extracted_dir, self.source_subfolder)
+        self.patch_cmake()
 
     def requirements(self):
         if self.options.with_bzip2:
             self.requires.add("bzip2/1.0.6@conan/stable")
+        if self.options.with_zlib:
+            self.requires.add("zlib/1.2.11@conan/stable")
 
     def configure_cmake(self):
         cmake = CMake(self)
         cmake.definitions["PCRE_BUILD_TESTS"] = False
+        cmake.definitions["PCRE_BUILD_PCREGREP"] = self.options.build_pcregrep
+        cmake.definitions["PCRE_BUILD_PCRECPP"] = self.options.build_pcrecpp
+        cmake.definitions["PCRE_SUPPORT_LIBZ"] = self.options.with_zlib
+        cmake.definitions["PCRE_SUPPORT_LIBBZ2"] = self.options.with_bzip2
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
             cmake.definitions["PCRE_STATIC_RUNTIME"] = not self.options.shared and "MT" in self.settings.compiler.runtime
         cmake.configure(build_folder=self.build_subfolder)
@@ -47,10 +78,9 @@ class PCREConan(ConanFile):
         cmake.build()
 
     def package(self):
+        self.copy(pattern="LICENCE", dst="licenses", src=self.source_subfolder)
         cmake = self.configure_cmake()
         cmake.install()
-        cmake.patch_config_paths()
-        self.copy(pattern="LICENCE", dst="licenses", src=self.source_subfolder)
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
