@@ -83,4 +83,7 @@ class PCREConan(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+        if self.settings.os == "Windows" and self.settings.build_type == 'Debug':
+            self.cpp_info.libs = ['pcreposixd', 'pcred']
+        else:
+            self.cpp_info.libs = ['pcreposix', 'pcre']
