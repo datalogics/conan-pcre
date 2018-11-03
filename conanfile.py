@@ -68,6 +68,8 @@ class PCREConan(ConanFile):
         cmake.definitions["PCRE_BUILD_PCRECPP"] = self.options.build_pcrecpp
         cmake.definitions["PCRE_SUPPORT_LIBZ"] = self.options.with_zlib
         cmake.definitions["PCRE_SUPPORT_LIBBZ2"] = self.options.with_bzip2
+        cmake.definitions["PCRE_SUPPORT_LIBREADLINE"] = False
+        cmake.definitions["PCRE_SUPPORT_LIBEDIT"] = False
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
             cmake.definitions["PCRE_STATIC_RUNTIME"] = not self.options.shared and "MT" in self.settings.compiler.runtime
         cmake.configure(build_folder=self.build_subfolder)
@@ -83,4 +85,7 @@ class PCREConan(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+        if self.settings.os == "Windows" and self.settings.build_type == 'Debug':
+            self.cpp_info.libs = ['pcreposixd', 'pcred']
+        else:
+            self.cpp_info.libs = ['pcreposix', 'pcre']
