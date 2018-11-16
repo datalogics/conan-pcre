@@ -23,11 +23,12 @@ class PCREConan(ConanFile):
         "fPIC": [True, False],
         "with_bzip2": [True, False],
         "with_zlib": [True, False],
+        "with_jit": [True, False],
         "build_pcrecpp": [True, False],
         "build_pcregrep": [True, False]
     }
     default_options = ("shared=False", "fPIC=True", "with_bzip2=True",
-                       "with_zlib=True", "build_pcrecpp=False",
+                       "with_zlib=True", "with_jit=False", "build_pcrecpp=False",
                        "build_pcregrep=False")
     source_subfolder = "source_subfolder"
     build_subfolder = "build_subfolder"
@@ -68,6 +69,7 @@ class PCREConan(ConanFile):
         cmake.definitions["PCRE_BUILD_PCRECPP"] = self.options.build_pcrecpp
         cmake.definitions["PCRE_SUPPORT_LIBZ"] = self.options.with_zlib
         cmake.definitions["PCRE_SUPPORT_LIBBZ2"] = self.options.with_bzip2
+        cmake.definitions["PCRE_SUPPORT_JIT"] = self.options.with_jit
         cmake.definitions["PCRE_SUPPORT_LIBREADLINE"] = False
         cmake.definitions["PCRE_SUPPORT_LIBEDIT"] = False
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
