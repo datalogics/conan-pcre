@@ -25,11 +25,14 @@ class PCREConan(ConanFile):
         "with_zlib": [True, False],
         "with_jit": [True, False],
         "build_pcrecpp": [True, False],
-        "build_pcregrep": [True, False]
+        "build_pcregrep": [True, False],
+        "with_utf": [True, False],
+        "with_unicode_properties": [True, False]
     }
     default_options = ("shared=False", "fPIC=True", "with_bzip2=True",
                        "with_zlib=True", "with_jit=False", "build_pcrecpp=False",
-                       "build_pcregrep=False")
+                       "build_pcregrep=False", "with_utf=False",
+                       "with_unicode_properties=False")
     source_subfolder = "source_subfolder"
     build_subfolder = "build_subfolder"
 
@@ -40,6 +43,8 @@ class PCREConan(ConanFile):
     def configure(self):
         if not self.options.build_pcrecpp:
             del self.settings.compiler.libcxx
+        if self.options.with_unicode_properties:
+            self.options.with_utf = True
 
     def patch_cmake(self):
         """Patch CMake file to avoid man and share during install stage
@@ -70,6 +75,8 @@ class PCREConan(ConanFile):
         cmake.definitions["PCRE_SUPPORT_LIBZ"] = self.options.with_zlib
         cmake.definitions["PCRE_SUPPORT_LIBBZ2"] = self.options.with_bzip2
         cmake.definitions["PCRE_SUPPORT_JIT"] = self.options.with_jit
+        cmake.definitions["PCRE_SUPPORT_UTF"] = self.options.with_utf
+        cmake.definitions["PCRE_SUPPORT_UNICODE_PROPERTIES"] = self.options.with_unicode_properties
         cmake.definitions["PCRE_SUPPORT_LIBREADLINE"] = False
         cmake.definitions["PCRE_SUPPORT_LIBEDIT"] = False
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
